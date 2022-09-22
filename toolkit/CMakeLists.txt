@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(gvins_dataset_toolkit)
 
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     rosbag
     gnss_comm
+    gflags_catkin
 )
 
 include_directories(${catkin_INCLUDE_DIRS})

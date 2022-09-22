@@ -6,9 +6,10 @@
 #include <memory>
 #include <gnss_comm/gnss_utility.hpp>
 #include <gnss_comm/gnss_ros.hpp>
+#include <gflags/gflags.h>
 
-#define INPUT_BAG_FILEPATH ""
-#define OUTPUT_RTK_FILEPATH ""
+DEFINE_string(bag_file, "", "bag file path");
+DEFINE_string(output_file, "", "output file path");
 
 using namespace gnss_comm;
 
@@ -16,6 +17,7 @@ struct RTKState
 {
     unsigned long gnss_ts_ns;
     Eigen::Vector3d t_ecef;
+    Eigen::Vector3d geodetic_pos;
     Eigen::Vector3d v_enu;
     uint8_t fix_type;
     bool valid_fix;
@@ -43,6 +45,7 @@ void extract_rtk_states(const std::string &bag_filepath, std::vector<RTKStatePtr
             RTKStatePtr rtk_state(new RTKState());
             rtk_state->gnss_ts_ns = static_cast<unsigned long>(time2sec(pvt->time)*1e9);
             Eigen::Vector3d pvt_lla(pvt->lat, pvt->lon, pvt->hgt);
+            rtk_state->geodetic_pos = pvt_lla;
             rtk_state->t_ecef = geo2ecef(pvt_lla);
             rtk_state->v_enu.x() =  pvt->vel_e;
             rtk_state->v_enu.y() =  pvt->vel_n;
@@ -69,6 +72,8 @@ void save_states(const std::vector<RTKStatePtr> &seq, const std::string &filepat
          */ 
         fprintf(fp, "%lu", state->gnss_ts_ns);
         for (uint32_t j = 0; j < 3; ++j)
+            fprintf(fp, ", %.5f", state->geodetic_pos(j));
+        for (uint32_t j = 0; j < 3; ++j)
             fprintf(fp, ", %.5f", state->t_ecef(j));
         for (uint32_t j = 0; j < 3; ++j)
             fprintf(fp, ", %.5f", state->v_enu(j));
@@ -81,11 +86,21 @@ void save_states(const std::vector<RTKStatePtr> &seq, const std::string &filepat
 
 int main(int argc, char **argv)
 {
+    ros::init(argc, argv, "bag2rtk_solution");
+    std::cout << "the nums of the bag2rtk_solution's commend: " << argc << std::endl;
+    for (int i = 0; i < argc; ++i) {
+      std::cout << "the " << i << "th commend: " << argv[i] << std::endl;
+    }
+    google::SetVersionString("1.0.0");
+    google::SetUsageMessage("bag2rtk_solution");
+    google::ParseCommandLineFlags(&argc, &argv, true);
+    std::cout << "bag_file: " << FLAGS_bag_file << std::endl;
+    std::cout << "output_file: " << FLAGS_output_file << std::endl;
     // load RTK states
     std::vector<RTKStatePtr> all_states;
-    extract_rtk_states(INPUT_BAG_FILEPATH, all_states);
+    extract_rtk_states(FLAGS_bag_file, all_states);
     // write to file
-    save_states(all_states, OUTPUT_RTK_FILEPATH);
+    save_states(all_states, FLAGS_output_file);
 
     std::cout << "Done.\n";
     return 0;

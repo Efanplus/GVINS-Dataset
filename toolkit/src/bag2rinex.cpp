@@ -2,9 +2,12 @@
 #include <rosbag/view.h>
 #include <gnss_comm/rinex_helper.hpp>
 #include <gnss_comm/gnss_ros.hpp>
+#include <gflags/gflags.h>
 
-#define INPUT_BAG_FILEPATH ""
-#define OUTPUT_RINEX_FILEPATH ""
+DEFINE_string(bag_file, "", "bag file path");
+DEFINE_string(output_file, "", "output file path");
+
+
 
 using namespace gnss_comm;
 
@@ -30,8 +33,18 @@ std::vector<std::vector<ObsPtr>> parse_gnss_meas(const std::string &bag_filepath
 
 int main(int argc, char **argv)
 {
-    std::vector<std::vector<ObsPtr>> all_gnss_meas = parse_gnss_meas(INPUT_BAG_FILEPATH);
-    obs2rinex(OUTPUT_RINEX_FILEPATH, all_gnss_meas);
+    ros::init(argc, argv, "bag2rinex");
+    std::cout << "the nums of the bag2rinex's commend: " << argc << std::endl;
+    for (int i = 0; i < argc; ++i) {
+      std::cout << "the " << i << "th commend: " << argv[i] << std::endl;
+    }
+    google::SetVersionString("1.0.0");
+    google::SetUsageMessage("bag2rinex");
+    google::ParseCommandLineFlags(&argc, &argv, true);
+    std::cout << "bag_file: " << FLAGS_bag_file << std::endl;
+    std::cout << "output_file: " << FLAGS_output_file << std::endl;
+    std::vector<std::vector<ObsPtr>> all_gnss_meas = parse_gnss_meas(FLAGS_bag_file);
+    obs2rinex(FLAGS_output_file, all_gnss_meas);
     std::cout << "Done\n";
     return 0;
 }
